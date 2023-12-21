@@ -282,6 +282,36 @@ async function notifySlack(message) {
     }
 }
 
+async function notifyTeams(message) {
+    
+    const currentHour = new Date().getHours();
+    const currentDay = new Date().toLocaleString('en-us', { weekday: 'long' });
+
+    logWithTimestamp(`Attempting to notify Teams. Current time: ${new Date().toLocaleTimeString()} and current day: ${currentDay}`);
+
+    if (currentHour >= config.startSilentHour || currentHour < config.endSilentHour || config.silentDays.includes(currentDay)) {
+        logWithTimestamp(`Skipped Teams notification due to current time or day restrictions. Silent hours: ${config.startSilentHour}:00 - ${config.endSilentHour}:00, Silent days: ${config.silentDays.join(", ")}`);
+        return;
+    }
+
+    const payload = {
+        "@type": "MessageCard",
+        "@context": "http://schema.org/extensions",
+        "summary": "Charger Status Update",
+        "sections": [{
+            "activityTitle": "Charger Status Update",
+            "text": message
+        }]
+    };
+
+    try {
+        await axios.post(TEAMS_WEBHOOK_URL, payload);
+        logWithTimestamp("Sent Teams notification:", message);
+    } catch (error) {
+        console.error("Failed to send Teams notification:", error);
+    }
+}
+
 
 (async () => {
     await refreshBearerToken().catch(err => console.error("Initial token refresh failed:", err));
