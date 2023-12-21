@@ -1,7 +1,7 @@
 const { 
     refreshBearerToken, 
     checkChargerAvailability,  
-} = require('./ZaptecSlackNotifier.js');
+} = require('./ZaptecUnifiedNotifier.js');
 const config = require('./config');
     
 (async () => {
@@ -20,5 +20,5 @@ const config = require('./config');
         await refreshBearerToken();
     }, config.zaptecTokenRefreshInterval); // 24 hours
 
-    console.log("Zaptec Slack Notifier is now running!");
+    console.log("Zaptec Unified Notifier is now running!");
 })();
