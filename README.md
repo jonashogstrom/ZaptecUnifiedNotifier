@@ -65,14 +65,14 @@ COMPANY_NAME=word
 EXCLUDE_DEVICES=devicename1,devicename2
 ```
 
-# Note Descriptions
-# COMPANY_NAME: Removes specified word from status (e.g., 'company' from 'company 01').
-# SLACK_WEBHOOK_PRIVATE_URL: Posts charge complete notifications privately. Defaults to SLACK_WEBHOOK_URL if not set.
-# TEAMS_WEBHOOK_PRIVATE_URL: Same as SLACK_WEBHOOK_PRIVATE_URL but for Teams.
-# SLACKBOT_ICON/SLACKBOT_NAME: Customize Slack message appearance.
-# EXCLUDE_DEVICES: Exclude specific devices from notifications.
+ Note Descriptions
+ COMPANY_NAME: Removes specified word from status (e.g., 'company' from 'company 01').
+ SLACK_WEBHOOK_PRIVATE_URL: Posts charge complete notifications privately. Defaults to SLACK_WEBHOOK_URL if not set.
+ TEAMS_WEBHOOK_PRIVATE_URL: Same as SLACK_WEBHOOK_PRIVATE_URL but for Teams.
+ SLACKBOT_ICON/SLACKBOT_NAME: Customize Slack message appearance.
+ EXCLUDE_DEVICES: Exclude specific devices from notifications.
 
-# Security Note: Avoid storing sensitive information in plaintext. Use secure methods for production.
+ Security Note: Avoid storing sensitive information in plaintext. Use secure methods for production.
 
 ## Running the Notifier
 Once you've set up the configurations, run the notifier using:
