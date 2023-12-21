@@ -15,10 +15,10 @@ Node.js & npm: This is the runtime environment for executing JavaScript code ser
 
 ## Clone this repository
 ```
-git clone https://github.com/PierreGode/ZaptecSlackNotifier.git
+git clone https://github.com/PierreGode/ZaptecUnifiedNotifier.git
 ```
 ```
-cd ZaptecSlackNotifier
+cd ZaptecUnifiedNotifier
 ```
 ## Prerequisites
 Before you proceed, ensure you have the following:
