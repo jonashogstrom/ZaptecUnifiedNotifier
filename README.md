@@ -80,3 +80,5 @@ Once you've set up the configurations, run the notifier using:
 node node.js
 ```
 preferably setup an @reboot sleep 60 && /usr/local/bin/node /home/pi/ZaptecSlackNotifier/node.js >> /var/log/slack.log 2>&1 in crontab
+
+/Created by Pierre Gode
