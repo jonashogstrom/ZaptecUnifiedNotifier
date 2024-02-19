@@ -50,7 +50,7 @@ ZAPTEC_PASSWORD=myPassword
 SLACKBOT_NAME=ZaptecBot
 SLACKBOT_ICON=https://raw.githubusercontent.com/PierreGode/ZaptecSlackNotifier/main/images/zaptec.png
 SLACK_WEBHOOK_URL=myWebhookURL
-SLACK_TOKEN=BotUserOAuthToken
+#SLACK_TOKEN=BotUserOAuthToken -- obsolete
 SLACK_WEBHOOK_PRIVATE_URL=myPrivateWebhookURL
 ```
 

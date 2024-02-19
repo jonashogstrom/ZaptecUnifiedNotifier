@@ -8,12 +8,12 @@ const config = require('./config');
 // Get configuration from environment variables
 const USERNAME = process.env.ZAPTEC_USERNAME;
 const PASSWORD = process.env.ZAPTEC_PASSWORD;
+const TEAMS_WEBHOOK_URL = process.env.TEAMS_WEBHOOK_URL;
+
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
 const SLACK_WEBHOOK_PRIVATE_URL = process.env.SLACK_WEBHOOK_PRIVATE_URL;
 const SLACKBOT_NAME = process.env.SLACKBOT_NAME;
 const SLACKBOT_ICON = process.env.SLACKBOT_ICON;
-const SLACK_TOKEN = process.env.SLACK_TOKEN;
-const slackClient = new WebClient(SLACK_TOKEN);
 const COMPANY_NAME = process.env.COMPANY_NAME;
 const EXCLUDE_DEVICES = process.env.EXCLUDE_DEVICES;
 
@@ -80,7 +80,7 @@ async function checkChargerAvailability() {
     const statusIconsEmoji = {
         1: "🔌", // charger free to use
         2: "🔐", // charger authorizing
-        3: "🪫", // charger in use, charging
+        3: "🚫", // charger in use, charging
         5: "🔋" // charge complete
     };
 
@@ -142,26 +142,27 @@ async function checkChargerAvailability() {
             let icon = freeChargersCount === 0 ? "❌" : statusIcons[1];
             let summaryMessage = `${icon} ${freeChargersCount} charger${plural_s} available.`;
             console.log(summaryMessage + "\n\n" + allChargerStatuses);
-            await notifySlack(summaryMessage + "\n\n" + allChargerStatuses).catch(err => console.error("Failed to send Slack notification:", err));
-        }
+            let msg = summaryMessage + "\n\n" + allChargerStatuses;
+            await notifyUnified(msg);
+       }
 
         if (initialRun && config.silentStart) {
             logWithTimestamp("Initial run, notifications are silenced.");
         } else {
             if (availableChargers.length) {
                 if (previousFreeChargerCount === 0) {
-                    await notifySlack("!!! CHARGER AVAILABLE !!!").catch(err => console.error("Failed to send Slack notification:", err));
+                    await notifyUnified("!!! CHARGER AVAILABLE !!!");
                 }
                 const verb = availableChargers.length === 1 ? "is" : "are";
                 const message = `${statusIcons[1]} ${availableChargers.join(", ")} ${verb} available!` ;
-                await notifySlack(message + "\n\n" + allChargerStatuses).catch(err => console.error("Failed to send Slack notification:", err));
+                await notifyUnified(message + "\n\n" + allChargerStatuses);
 
             }
 
             if (completedChargers.length) {
                 const verb = completedChargers.length === 1 ? "has" : "have";
                 const message = `${statusIcons[5]} ${completedChargers.join(", ")} ${verb} stopped charging.`;
-                await notifySlack(message + "\n" + allChargerStatuses).catch(err => console.error("Failed to send Slack notification:", err));
+                await notifyUnified(message + "\n" + allChargerStatuses);
             }
         }
         initialRun = false;  // Reset the flag after the initial run
@@ -254,13 +255,13 @@ async function notifyPersonal(message) {
     }
 }
 
-async function notifySlack(message) {
+async function notifyUnified(message) {
     const currentHour = new Date().getHours();
     const currentDay = new Date().toLocaleString('en-us', { weekday: 'long' });
 
-    // Determine whether we should silence the notification
-    const isWithinSilentHours = (config.startSilentHour < config.endSilentHour)
-        ? (currentHour >= config.startSilentHour && currentHour < config.endSilentHour)
+     // Determine whether we should silence the notification
+     const isWithinSilentHours = (config.startSilentHour < config.endSilentHour)
+         ? (currentHour >= config.startSilentHour && currentHour < config.endSilentHour)
         : (currentHour >= config.startSilentHour || currentHour < config.endSilentHour);
 
     const isSilentDay = config.silentDays.includes(currentDay);
@@ -270,6 +271,16 @@ async function notifySlack(message) {
         return;
     }
 
+    await notifySlack(message).catch(err => console.error("Failed to send Slack notification:", err));
+    await notifyTeams(message).catch(err => console.error("Failed to send Teams notification:", err));
+}
+
+async function notifySlack(message) {
+    if (!SLACK_WEBHOOK_URL) {
+        logWithTimestamp("No Slack webhook URL provided, skipping notification.")
+        return;
+    }
+ 
     try {
         await axios.post(SLACK_WEBHOOK_URL, {
             text: message,
@@ -283,16 +294,12 @@ async function notifySlack(message) {
 }
 
 async function notifyTeams(message) {
-    
-    const currentHour = new Date().getHours();
-    const currentDay = new Date().toLocaleString('en-us', { weekday: 'long' });
-
-    logWithTimestamp(`Attempting to notify Teams. Current time: ${new Date().toLocaleTimeString()} and current day: ${currentDay}`);
-
-    if (currentHour >= config.startSilentHour || currentHour < config.endSilentHour || config.silentDays.includes(currentDay)) {
-        logWithTimestamp(`Skipped Teams notification due to current time or day restrictions. Silent hours: ${config.startSilentHour}:00 - ${config.endSilentHour}:00, Silent days: ${config.silentDays.join(", ")}`);
+    if (!TEAMS_WEBHOOK_URL) {
+        logWithTimestamp("No Teams webhook URL provided, skipping notification.")
         return;
     }
+
+    logWithTimestamp(`Attempting to notify Teams.`);
 
     const payload = {
         "@type": "MessageCard",
@@ -305,8 +312,8 @@ async function notifyTeams(message) {
     };
 
     try {
-        await axios.post(TEAMS_WEBHOOK_URL, payload);
-        logWithTimestamp("Sent Teams notification:", message);
+        let res = await axios.post(TEAMS_WEBHOOK_URL, payload);
+        logWithTimestamp("Sent Teams notification:\n"+ message + "\n" + res.data);
     } catch (error) {
         console.error("Failed to send Teams notification:", error);
     }
@@ -330,7 +337,7 @@ async function notifyTeams(message) {
         await refreshBearerToken().catch(err => console.error("Periodic Zaptec token refresh failed:", err));
     }, config.zaptecTokenRefreshInterval);
 
-    logWithTimestamp("Zaptec Slack Notifier is now running!");
+    logWithTimestamp("Zaptec Notifier is now running!");
 })();
 
 module.exports = {

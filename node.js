@@ -5,7 +5,7 @@ const {
 const config = require('./config');
     
 (async () => {
-    console.log("Starting Zaptec Slack Notifier...");
+    console.log("Starting Zaptec Notifier...");
    
     console.log("Setting up intervals for checking charger availability, token refresh...");
 
