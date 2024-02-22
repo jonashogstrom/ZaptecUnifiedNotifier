@@ -142,8 +142,8 @@ async function checkChargerAvailability() {
             let icon = freeChargersCount === 0 ? "❌" : statusIcons[1];
             let summaryMessage = `${icon} ${freeChargersCount} charger${plural_s} available.`;
             console.log(summaryMessage + "\n\n" + allChargerStatuses);
-            let msg = summaryMessage + "\n\n" + allChargerStatuses;
-            await notifyUnified(msg);
+            
+            await notifyUnified(summaryMessage, allChargerStatuses, freeChargersCount);
        }
 
         if (initialRun && config.silentStart) {
@@ -151,18 +151,18 @@ async function checkChargerAvailability() {
         } else {
             if (availableChargers.length) {
                 if (previousFreeChargerCount === 0) {
-                    await notifyUnified("!!! CHARGER AVAILABLE !!!");
+                    await notifyUnified("!!! CHARGER AVAILABLE !!!", "", freeChargersCount);
                 }
                 const verb = availableChargers.length === 1 ? "is" : "are";
                 const message = `${statusIcons[1]} ${availableChargers.join(", ")} ${verb} available!` ;
-                await notifyUnified(message + "\n\n" + allChargerStatuses);
+                await notifyUnified(message, allChargerStatuses, freeChargersCount);
 
             }
 
             if (completedChargers.length) {
                 const verb = completedChargers.length === 1 ? "has" : "have";
                 const message = `${statusIcons[5]} ${completedChargers.join(", ")} ${verb} stopped charging.`;
-                await notifyUnified(message + "\n" + allChargerStatuses);
+                await notifyUnified(message, allChargerStatuses, freeChargersCount);
             }
         }
         initialRun = false;  // Reset the flag after the initial run
@@ -255,7 +255,7 @@ async function notifyPersonal(message) {
     }
 }
 
-async function notifyUnified(message) {
+async function notifyUnified(message, status, freeChargersCount) {
     const currentHour = new Date().getHours();
     const currentDay = new Date().toLocaleString('en-us', { weekday: 'long' });
 
@@ -267,12 +267,12 @@ async function notifyUnified(message) {
     const isSilentDay = config.silentDays.includes(currentDay);
 
     if (isWithinSilentHours || isSilentDay) {
-        logWithTimestamp("Skipped Slack notification due to current time or day restrictions.");
+        logWithTimestamp("Skipped notification due to current time or day restrictions.");
         return;
     }
 
-    await notifySlack(message).catch(err => console.error("Failed to send Slack notification:", err));
-    await notifyTeams(message).catch(err => console.error("Failed to send Teams notification:", err));
+    await notifySlack(message+ "\n\n" + status).catch(err => console.error("Failed to send Slack notification:", err));
+    await notifyTeams(message, status, freeChargersCount).catch(err => console.error("Failed to send Teams notification:", err));
 }
 
 async function notifySlack(message) {
@@ -293,7 +293,7 @@ async function notifySlack(message) {
     }
 }
 
-async function notifyTeams(message) {
+async function notifyTeams(message, status, freeChargersCount) {
     if (!TEAMS_WEBHOOK_URL) {
         logWithTimestamp("No Teams webhook URL provided, skipping notification.")
         return;
@@ -304,10 +304,11 @@ async function notifyTeams(message) {
     const payload = {
         "@type": "MessageCard",
         "@context": "http://schema.org/extensions",
-        "summary": "Charger Status Update",
+        "summary": freeChargersCount+" charger available",
         "sections": [{
-            "activityTitle": "Charger Status Update",
-            "text": message
+            "activityTitle": message,
+            "activitySubtitle": status,
+            "activityImage": "https://raw.githubusercontent.com/jonashogstrom/ZaptecUnifiedNotifier/main/images/numbers/"+freeChargersCount+".png",
         }]
     };
 
